@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RepositoryPattern.Api/RepositoryPattern.Api.csproj" />
+    <Project Path="src/RepositoryPattern.Application/RepositoryPattern.Application.csproj" />
+    <Project Path="src/RepositoryPattern.Domain/RepositoryPattern.Domain.csproj" />
+    <Project Path="src/RepositoryPattern.Infraestructure/RepositoryPattern.Infraestructure.csproj" />
+  </Folder>
+</Solution>
