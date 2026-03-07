@@ -2,7 +2,7 @@ namespace RepositoryPattern.Application.Contracts;
 
 public interface IRepository<T> where T : class
 {
-    Task<T> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<T>> ListAsync(int  skip = 0, int take = 10, CancellationToken cancellationToken = default);
     Task AddAsync(T entity, CancellationToken cancellationToken = default);
     Task UpdateAsync(T entity, CancellationToken cancellationToken = default);

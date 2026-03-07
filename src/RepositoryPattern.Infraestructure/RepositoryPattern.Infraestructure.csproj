@@ -6,4 +6,14 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RepositoryPattern.Application\RepositoryPattern.Application.csproj" />
+    <ProjectReference Include="..\RepositoryPattern.Domain\RepositoryPattern.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
