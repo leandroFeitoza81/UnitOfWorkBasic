@@ -25,9 +25,26 @@ public class DbSessions : IDisposable, IAsyncDisposable
         Begin();
         return Task.CompletedTask;
     }
-    
-    public void Commit() => Transaction?.Commit();
-    public void Rollback() => Transaction?.Rollback();
+
+    public void Commit()
+    {
+        if (Transaction is null)
+            return;
+        
+        Transaction.Commit();
+        Transaction.Dispose();
+        Transaction = null;
+    }
+
+    public void Rollback()
+    {
+        if (Transaction is null)
+            return;
+        
+        Transaction.Rollback();
+        Transaction.Dispose();
+        Transaction = null;
+    }
     
     public void Dispose()
     {
