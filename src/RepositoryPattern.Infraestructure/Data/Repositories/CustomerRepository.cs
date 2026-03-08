@@ -14,7 +14,7 @@ public class CustomerRepository(DbSessions session) : IRepository<Customer>
     {
         using var command = CreateCommand("""
                                           SELECT TOP 1 Id, Name, Email, CreatedAtUtc, IsDeleted
-                                          FROM dbo.Customer WITH(NOLOCK)
+                                          FROM TutoRepo.dbo.Customers WITH(READCOMMITTEDLOCK )
                                           WHERE id = @id AND IsDeleted = 0
                                           """);
         
