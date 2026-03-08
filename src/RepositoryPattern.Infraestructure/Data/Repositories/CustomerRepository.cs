@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using RepositoryPattern.Application.Contracts;
 using RepositoryPattern.Domain.Entities;
 using RepositoryPattern.Infraestructure.Data.Core;
+using RepositoryPattern.Infraestructure.Data.Queries;
 using RepositoryPattern.Infraestructure.Data.Utils;
 
 namespace RepositoryPattern.Infraestructure.Data.Repositories;
@@ -12,12 +13,7 @@ public class CustomerRepository(DbSessions session) : IRepository<Customer>
 {
     public async Task<Customer?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        using var command = CreateCommand("""
-                                          SELECT TOP 1 Id, Name, Email, CreatedAtUtc, IsDeleted
-                                          FROM TutoRepo.dbo.Customers WITH(READCOMMITTEDLOCK )
-                                          WHERE id = @id AND IsDeleted = 0
-                                          """);
-        
+        using var command = CreateCommand(CustomersQueries.GetCustomerByIdQuery);
         AddParameter(command, "@Id", SqlDbType.Int, id);
 
         await using var reader = await ((DbCommand)command).ExecuteReaderAsync(cancellationToken);
@@ -28,24 +24,50 @@ public class CustomerRepository(DbSessions session) : IRepository<Customer>
         return null;
     }
     
-    public Task<IReadOnlyList<Customer>> ListAsync(int skip = 0, int take = 10, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Customer>> ListAsync(int skip = 0, int take = 10,
+        CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        using var command = CreateCommand(CustomersQueries.GetAllCustomers);
+        AddParameter(command, "@Skip", SqlDbType.Int, skip);
+        AddParameter(command, "@Take", SqlDbType.Int, take);
+        
+        var list = new List<Customer>(take);
+        await using var reader = await ((DbCommand)command).ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+            list.Add(MapToCustomer(reader));
+            
+        return list;
     }
 
-    public Task AddAsync(Customer entity, CancellationToken cancellationToken = default)
+    public async Task<int> AddAsync(Customer entity, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        using var command = CreateCommand(CustomersQueries.InsertCustomer);
+        AddParameter(command, "@Name", SqlDbType.NVarChar, entity.Name, 200);
+        AddParameter(command, "@Email", SqlDbType.NVarChar, entity.Email);
+        
+        var id = await ((DbCommand)command).ExecuteScalarAsync(cancellationToken);
+        entity.Id = Convert.ToInt32(id);
+        entity.CreatedAtUtc = DateTime.UtcNow;
+        return entity.Id;
     }
 
-    public Task UpdateAsync(Customer entity, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(Customer entity, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        using var command = CreateCommand(CustomersQueries.UpdateCustomer);
+        AddParameter(command, "@Id", SqlDbType.Int, entity.Id);
+        AddParameter(command, "@Name", SqlDbType.NVarChar, entity.Name, 200);
+        AddParameter(command, "@Email", SqlDbType.NVarChar, (object?)entity.Email ?? DBNull.Value, 320);
+        
+        var rows = await ((DbCommand)command).ExecuteNonQueryAsync(cancellationToken);
+        return rows > 0;
     }
 
-    public Task DeleteAsync(Customer entity, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        using var command = CreateCommand(CustomersQueries.DeleteCustomer);
+        AddParameter(command, "@Id", SqlDbType.Int, id);
+        var rows = await ((DbCommand)command).ExecuteNonQueryAsync(cancellationToken);
+        return rows > 0;
     }
     
     private IDisposable CreateCommand(string query, CommandType commandType = CommandType.Text)
