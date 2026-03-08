@@ -33,7 +33,7 @@ public static class CustomerEndpoints
                     await uow.BeginAsync(cancelationToken);
                     var id = await repository.AddAsync(input, cancelationToken);
                     await uow.CommitAsync(cancelationToken);
-                    return Results.Created($"/customers/{id}", new { id });
+                    return Results.Ok($"Criado customer com id:  {id}");
                 }
                 catch (Exception ex)
                 {
