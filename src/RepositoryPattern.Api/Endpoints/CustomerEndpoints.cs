@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using RepositoryPattern.Api.Helper;
 using RepositoryPattern.Application.Contracts;
 using RepositoryPattern.Domain.Entities;
 
@@ -15,12 +16,12 @@ public static class CustomerEndpoints
                 {
                     var customer = await repository.GetByIdAsync(id, cancellationToken);
                     return customer is null
-                        ? Results.NotFound()
-                        : Results.Ok(customer);
+                        ? ApiResponseResults.NotFound()
+                        : ApiResponseResults.Ok(customer);
                 }
                 catch (Exception ex)
                 {
-                    return Results.StatusCode(StatusCodes.Status500InternalServerError);
+                    return ApiResponseResults.Fail(StatusCodes.Status500InternalServerError, ex.Message);
                 }
             });
 
@@ -33,12 +34,12 @@ public static class CustomerEndpoints
                     await uow.BeginAsync(cancelationToken);
                     var id = await repository.AddAsync(input, cancelationToken);
                     await uow.CommitAsync(cancelationToken);
-                    return Results.Ok($"Criado customer com id:  {id}");
+                    return ApiResponseResults.Created<object>(null, $"Criado customer com id: {id}");
                 }
                 catch (Exception ex)
                 {
                     await uow.RollbackAsync(cancelationToken);
-                    return Results.StatusCode(StatusCodes.Status500InternalServerError);
+                    return ApiResponseResults.Fail(StatusCodes.Status500InternalServerError, ex.Message);
                 }
             });
 
@@ -47,11 +48,11 @@ public static class CustomerEndpoints
             try
             {
                 var customers = await repository.ListAsync();
-                return Results.Ok(customers);
+                return ApiResponseResults.Ok(customers);
             }
             catch (Exception ex)
             {
-                return Results.StatusCode(StatusCodes.Status500InternalServerError);
+                return ApiResponseResults.Fail(StatusCodes.Status500InternalServerError, ex.Message);
             }
         });
 
@@ -68,22 +69,35 @@ public static class CustomerEndpoints
                 await uow.BeginAsync(cancelationToken);
                 var updated = await repository.UpdateAsync(input, cancelationToken);
                 await uow.CommitAsync(cancelationToken);
-                return updated ? Results.NoContent() : Results.BadRequest();
+                //return updated ? Results.NoContent() : Results.BadRequest();
+                return updated
+                    ? ApiResponseResults.Ok<object>(null, $"Customer {id} atualizado com sucesso")
+                    : ApiResponseResults.Fail(StatusCodes.Status400BadRequest, $"Customer {id} não atualizado");
             }
             catch (Exception ex)
             {
                 await uow.RollbackAsync(cancelationToken);
-                return Results.StatusCode(StatusCodes.Status500InternalServerError);
+                return ApiResponseResults.Fail(StatusCodes.Status500InternalServerError, ex.Message);
             }
         });
 
         app.MapDelete("/customers/{id:int}", async (int id, IRepository<Customer> repository, IUnitWork uow,
                 CancellationToken cancelationToken) =>
         {
-            await uow.BeginAsync(cancelationToken);
-            var deleted = await repository.DeleteAsync(id, cancelationToken);
-            await uow.CommitAsync(cancelationToken);
-            return deleted ? Results.NoContent() : Results.BadRequest();
+            try
+            {
+                await uow.BeginAsync(cancelationToken);
+                var deleted = await repository.DeleteAsync(id, cancelationToken);
+                await uow.CommitAsync(cancelationToken);
+                return deleted 
+                    ? ApiResponseResults.Ok<object>(null, $"Customer excluido da base.") 
+                    : ApiResponseResults.Fail(StatusCodes.Status400BadRequest, $"Erro ao excluir customer: {id}.");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponseResults.Fail(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+ 
         });
         
         return app;
