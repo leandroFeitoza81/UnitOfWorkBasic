@@ -95,7 +95,7 @@ public class CustomerRepository(DbSessions session) : IRepository<Customer>
 
     private static Customer MapToCustomer(IDataRecord record)
     {
-        return new Customer()
+        return new Customer
         {
             Id = record.GetInt("Id"),
             Name = record.GetString("Name") ?? string.Empty,
